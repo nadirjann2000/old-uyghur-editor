@@ -205,16 +205,14 @@ const Editor: React.FC<EditorProps> = ({
   };
 
   const createImageFromText = async (): Promise<HTMLCanvasElement | null> => {
-    const selection = window.getSelection();
-    if (!selection?.rangeCount) {
-      setStatus('请先选择要转换的文本');
+    if (!editorRef.current) {
+      setStatus('编辑器未初始化');
       return null;
     }
 
-    const range = selection.getRangeAt(0);
-    const text = range.toString();
+    const text = editorRef.current.innerText;
     if (!text) {
-      setStatus('请先选择要转换的文本');
+      setStatus('请先输入要转换的文本');
       return null;
     }
 
@@ -234,11 +232,13 @@ const Editor: React.FC<EditorProps> = ({
     const textHeight = tempDiv.offsetHeight;
     document.body.removeChild(tempDiv);
 
-    // 创建 canvas
+    // 创建 canvas，添加内边距
     const canvas = document.createElement('canvas');
     const scale = window.devicePixelRatio || 1;
-    canvas.width = textWidth * scale;
-    canvas.height = textHeight * scale;
+    const padding = 0; // 添加内边距
+    
+    canvas.width = (textWidth + padding * 2) * scale;
+    canvas.height = (textHeight + padding * 2) * scale;
     const ctx = canvas.getContext('2d');
 
     if (!ctx) {
@@ -257,8 +257,8 @@ const Editor: React.FC<EditorProps> = ({
     ctx.textBaseline = 'top';
     ctx.direction = 'rtl';
 
-    // 绘制文本
-    ctx.fillText(text, textWidth, 0);
+    // 绘制文本，添加内边距
+    ctx.fillText(text, canvas.width / scale - padding, padding);
 
     return canvas;
   };

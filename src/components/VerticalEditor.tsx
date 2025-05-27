@@ -38,9 +38,10 @@ const EditorContentWrapper = styled.div`
   justify-content: center;
 `;
 
-const EditorArea = styled.div<{ fontSize: number }>`
+const EditorArea = styled.div<{ fontSize: number; width: number; height: number }>`
   min-height: 400px;
-  width: 100%;
+  width: ${props => props.height}px;
+  height: ${props => props.width}px;
   padding: 20px;
   border: 1px solid #e0e0e0;
   border-radius: 8px;
@@ -50,8 +51,7 @@ const EditorArea = styled.div<{ fontSize: number }>`
   line-height: 1.5;
   outline: none;
   overflow-y: auto;
-  writing-mode: vertical-rl;
-  text-orientation: upright;
+  direction: rtl;
   white-space: pre-wrap;
   word-wrap: break-word;
   box-sizing: border-box;
@@ -60,6 +60,8 @@ const EditorArea = styled.div<{ fontSize: number }>`
   -webkit-user-select: text;
   -moz-user-select: text;
   -ms-user-select: text;
+  transform: rotate(-90deg);
+  transform-origin: center center;
 `;
 
 const ControlsContainer = styled.div`
@@ -181,8 +183,26 @@ const VerticalEditor: React.FC<VerticalEditorProps> = ({
   onFontSizeChange
 }) => {
   const editorRef = useRef<HTMLDivElement>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
   const [status, setStatus] = useState<string>('正在加载字体...');
   const [isFontLoaded, setIsFontLoaded] = useState(false);
+  const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
+
+  useEffect(() => {
+    const updateDimensions = () => {
+      if (wrapperRef.current) {
+        const { width, height } = wrapperRef.current.getBoundingClientRect();
+        setDimensions({ width, height });
+      }
+    };
+
+    updateDimensions();
+    window.addEventListener('resize', updateDimensions);
+
+    return () => {
+      window.removeEventListener('resize', updateDimensions);
+    };
+  }, []);
 
   useEffect(() => {
     document.fonts.ready.then(() => {
@@ -235,16 +255,14 @@ const VerticalEditor: React.FC<VerticalEditorProps> = ({
   };
 
   const createImageFromText = async (): Promise<HTMLCanvasElement | null> => {
-    const selection = window.getSelection();
-    if (!selection?.rangeCount) {
-      setStatus('请先选择要转换的文本');
+    if (!editorRef.current) {
+      setStatus('编辑器未初始化');
       return null;
     }
 
-    const range = selection.getRangeAt(0);
-    const text = range.toString();
+    const text = editorRef.current.innerText;
     if (!text) {
-      setStatus('请先选择要转换的文本');
+      setStatus('请先输入要转换的文本');
       return null;
     }
 
@@ -268,8 +286,8 @@ const VerticalEditor: React.FC<VerticalEditorProps> = ({
     const canvas = document.createElement('canvas');
     const scale = window.devicePixelRatio || 1;
     
-    canvas.width = textHeight * scale;  // 交换宽高并添加内边距
-    canvas.height = textWidth * scale;  // 交换宽高并添加内边距
+    canvas.width = textHeight * scale;
+    canvas.height = textWidth * scale;
     const ctx = canvas.getContext('2d');
 
     if (!ctx) {
@@ -366,15 +384,21 @@ const VerticalEditor: React.FC<VerticalEditorProps> = ({
           </FontSizeButton>
         </FontSizeControl>
       </ControlsContainer>
-      <EditorArea
-        ref={editorRef}
-        contentEditable
-        suppressContentEditableWarning
-        fontSize={fontSize}
-        onInput={handleInput}
-        onFocus={handleFocus}
-        onBlur={handleFocus}
-      />
+      <EditorWrapper>
+        <EditorContentWrapper ref={wrapperRef}>
+          <EditorArea
+            ref={editorRef}
+            contentEditable
+            suppressContentEditableWarning
+            fontSize={fontSize}
+            width={dimensions.width}
+            height={dimensions.height}
+            onInput={handleInput}
+            onFocus={handleFocus}
+            onBlur={handleFocus}
+          />
+        </EditorContentWrapper>
+      </EditorWrapper>
       <Status>{status}</Status>
     </EditorContainer>
   );
