@@ -186,10 +186,19 @@ const Editor: React.FC<EditorProps> = ({
   const handleFocus = () => {
     if (editorRef.current) {
       const selection = window.getSelection();
-      if (selection && selection.rangeCount === 0) {
+      if (selection) {
         const range = document.createRange();
-        range.selectNodeContents(editorRef.current);
-        range.collapse(false); // 将光标放在末尾
+        const lastChild = editorRef.current.lastChild;
+        
+        if (lastChild) {
+          range.setStartAfter(lastChild);
+          range.setEndAfter(lastChild);
+        } else {
+          range.selectNodeContents(editorRef.current);
+          range.collapse(false);
+        }
+        
+        selection.removeAllRanges();
         selection.addRange(range);
       }
     }

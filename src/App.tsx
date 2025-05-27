@@ -89,34 +89,48 @@ function App() {
   };
 
   const handleKeyPress = (char: string) => {
+    console.log('handleKeyPress called with char:', char);
     if (currentPage === 'editor') {
       const selection = window.getSelection();
+      console.log('Selection:', selection);
       if (selection && selection.rangeCount > 0) {
         const range = selection.getRangeAt(0);
-        const editorElement = range.commonAncestorContainer.parentElement;
+        // 获取实际的编辑器元素，考虑 Shadow DOM
+        const editorElement = range.commonAncestorContainer.nodeType === Node.TEXT_NODE 
+          ? range.commonAncestorContainer.parentElement
+          : range.commonAncestorContainer;
         
-        // 确保选中的内容在编辑器内
-        if (editorElement && editorElement.getAttribute('contenteditable') === 'true') {
-          // 保存当前选区
-          const savedRange = range.cloneRange();
-          
-          // 插入文本
-          document.execCommand('insertText', false, char);
-          
-          // 恢复选区并移动光标到插入的文本后面
-          selection.removeAllRanges();
-          selection.addRange(savedRange);
-          savedRange.setStartAfter(savedRange.endContainer);
-          savedRange.collapse(true);
-          
-          // 触发输入事件以更新内容
-          const inputEvent = new Event('input', { bubbles: true });
-          editorElement.dispatchEvent(inputEvent);
-          
-          // 保持编辑器焦点
-          editorElement.focus();
+        console.log('Editor element:', editorElement);
+        
+        if (editorElement instanceof HTMLElement && editorElement.getAttribute('contenteditable') === 'true') {
+          console.log('Attempting to insert text:', char);
+          try {
+            // 使用 insertText 方法插入文本
+            const textNode = document.createTextNode(char);
+            range.deleteContents();
+            range.insertNode(textNode);
+            
+            // 移动光标到插入的文本后面
+            range.setStartAfter(textNode);
+            range.setEndAfter(textNode);
+            selection.removeAllRanges();
+            selection.addRange(range);
+            
+            // 触发输入事件以更新内容
+            const inputEvent = new Event('input', { bubbles: true });
+            editorElement.dispatchEvent(inputEvent);
+            console.log('Text insertion completed');
+          } catch (error) {
+            console.error('Error inserting text:', error);
+          }
+        } else {
+          console.log('Editor element not found or not contenteditable');
         }
+      } else {
+        console.log('No valid selection found');
       }
+    } else {
+      console.log('Not in editor page');
     }
   };
 
