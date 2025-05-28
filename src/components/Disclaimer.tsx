@@ -62,7 +62,7 @@ const Disclaimer: React.FC = () => {
         </WarningText>
         
         <RuleList>
-          <RuleItem>坚决拥护中国共产党的领导，维护国家统一和民族团结</RuleItem>
+          <RuleItem>坚决拥护中国共产党的领导，维护国家统一和民族团结，筑牢中华民族共同体意识</RuleItem>
           <RuleItem>严禁使用本工具制作、传播任何涉及恐怖主义、分裂主义、极端主义的内容</RuleItem>
           <RuleItem>严禁使用本工具从事任何危害国家安全、破坏民族团结的活动</RuleItem>
           <RuleItem>用户应当遵守相关法律法规，尊重知识产权</RuleItem>
