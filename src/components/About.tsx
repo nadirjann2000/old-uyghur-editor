@@ -61,6 +61,29 @@ const TeamMember = styled.div`
   padding: 20px;
   margin-bottom: 20px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+`;
+
+const Avatar = styled.div`
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  border: 3px solid #3498db;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+`;
+
+const MemberInfo = styled.div`
+  flex: 1;
 `;
 
 const MemberName = styled.h3`
@@ -111,7 +134,7 @@ const About: React.FC = () => {
         <SubTitle>使用技巧</SubTitle>
         <List>
           <ListItem>
-            在开始编辑前，请确保您的系统已安装 Noto Serif Old Uyghur 字体。
+            在开始编辑前，请确保您的系统最好已安装 Noto Serif Old Uyghur 字体。
           </ListItem>
           <ListItem>
             使用现代浏览器（如 Chrome、Firefox、Edge）可以获得最佳体验。
@@ -122,31 +145,25 @@ const About: React.FC = () => {
           <ListItem>
             竖排模式下，文本会自动旋转，您可以通过滚动来查看完整内容。
           </ListItem>
+          <ListItem>
+            当前不支持多行导出，文本内容导出时会合并为一行。
+          </ListItem>
         </List>
       </Section>
 
       <Section>
         <SubTitle>开发团队</SubTitle>
         <TeamMember>
-          <MemberName>张三</MemberName>
-          <MemberRole>项目负责人 / 前端开发</MemberRole>
-          <MemberDescription>
-            负责项目的整体规划和前端开发工作，专注于用户体验和界面设计。
-          </MemberDescription>
-        </TeamMember>
-        <TeamMember>
-          <MemberName>李四</MemberName>
-          <MemberRole>后端开发</MemberRole>
-          <MemberDescription>
-            负责后端API开发和数据处理，确保系统的稳定性和性能。
-          </MemberDescription>
-        </TeamMember>
-        <TeamMember>
-          <MemberName>王五</MemberName>
-          <MemberRole>UI/UX 设计师</MemberRole>
-          <MemberDescription>
-            负责用户界面设计和交互体验优化，致力于提供直观易用的操作界面。
-          </MemberDescription>
+          <Avatar>
+            <img src="/avatar.jpg" alt="纳迪尔" />
+          </Avatar>
+          <MemberInfo>
+            <MemberName>纳迪尔</MemberName>
+            <MemberRole>项目负责人 / 开发</MemberRole>
+            <MemberDescription>
+              古典文献学研究生在读，人工智能本科毕业，希望技术助力文献研究。
+            </MemberDescription>
+          </MemberInfo>
         </TeamMember>
       </Section>
 
@@ -156,9 +173,9 @@ const About: React.FC = () => {
           如果您有任何问题、建议或反馈，欢迎通过以下方式联系我们：
         </Text>
         <List>
-          <ListItem>邮箱：contact@example.com</ListItem>
-          <ListItem>GitHub：github.com/old-uyghur-editor</ListItem>
-          <ListItem>问题反馈：github.com/old-uyghur-editor/issues</ListItem>
+          <ListItem>邮箱：nadirturghun@163.com</ListItem>
+          <ListItem>GitHub：github.com/nadirjann2000/old-uyghur-editor</ListItem>
+          <ListItem>问题反馈：github.com/nadirjann2000/old-uyghur-editor/issues</ListItem>
         </List>
       </Section>
     </AboutContainer>

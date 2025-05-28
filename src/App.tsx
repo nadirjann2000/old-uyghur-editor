@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import Editor from './components/Editor';
 import VerticalEditor from './components/VerticalEditor';
 import About from './components/About';
+import Disclaimer from './components/Disclaimer';
 import Keyboard from './components/Keyboard';
 import { createGlobalStyle } from 'styled-components';
 
@@ -78,7 +79,7 @@ function App() {
   const [isVertical, setIsVertical] = useState(false);
   const [sharedContent, setSharedContent] = useState('');
   const [sharedFontSize, setSharedFontSize] = useState(24);
-  const [currentPage, setCurrentPage] = useState<'editor' | 'about'>('editor');
+  const [currentPage, setCurrentPage] = useState<'editor' | 'about' | 'disclaimer'>('editor');
 
   const handleContentChange = (content: string) => {
     setSharedContent(content);
@@ -161,6 +162,16 @@ function App() {
             >
               关于
             </NavLink>
+            <NavLink
+              href="#"
+              active={currentPage === 'disclaimer'}
+              onClick={(e) => {
+                e.preventDefault();
+                setCurrentPage('disclaimer');
+              }}
+            >
+              警告
+            </NavLink>
           </NavLinks>
         </NavContainer>
       </Nav>
@@ -183,8 +194,10 @@ function App() {
               onFontSizeChange={handleFontSizeChange}
             />
           )
-        ) : (
+        ) : currentPage === 'about' ? (
           <About />
+        ) : (
+          <Disclaimer />
         )}
       </AppContainer>
       <Keyboard onKeyPress={handleKeyPress} />
