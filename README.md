@@ -23,7 +23,7 @@
 
 1. 克隆项目
 ```bash
-git clone [项目地址]
+git clone https://github.com/nadirjann2000/old-uyghur-editor.git
 cd old-uyghur-editor
 ```
 
@@ -71,3 +71,13 @@ npm run build
 ## 许可证
 
 MIT License
+
+## 字体许可声明
+
+本编辑器使用了以下开源字体：
+- **Noto Serif Old Uyghur**  
+  Copyright 2022 The Noto Project Authors (https://github.com/notofonts/old-uyghur)  
+  保留字体名称（Reserved Font Name）："Noto Serif Old Uyghur".
+
+此字体根据 [SIL Open Font License 1.1](https://openfontlicense.org) 授权。  
+**完整的许可证文本请查看：[OFL.txt](./LICENSES/OFL.txt)**。
