@@ -1,5 +1,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import styled from 'styled-components';
+import Keyboard from './Keyboard';
+import MobileKeyboard from './MobileKeyboard';
 
 const EditorContainer = styled.div`
   background-color: #ffffff;
@@ -57,6 +59,28 @@ const EditorArea = styled.div<{ fontSize: number }>`
     min-height: 300px;
     padding: 15px;
   }
+`;
+
+const MobileDisplayArea = styled.div<{ fontSize: number }>`
+  min-height: 300px;
+  width: 100%;
+  padding: 15px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  background-color: #f8f9fa;
+  font-family: 'NotoSerifOldUyghur', serif;
+  font-size: ${props => props.fontSize}px;
+  line-height: 1.5;
+  overflow-y: auto;
+  direction: rtl;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  box-sizing: border-box;
+  position: relative;
+  user-select: text;
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
 `;
 
 const ControlsContainer = styled.div`
@@ -230,10 +254,13 @@ const Editor: React.FC<EditorProps> = ({
   const [status, setStatus] = useState<string>('正在加载字体...');
   const [isFontLoaded, setIsFontLoaded] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [editorContent, setEditorContent] = useState(content);
+  const [mobileContent, setMobileContent] = useState('');
 
   useEffect(() => {
     const handleResize = () => {
-      setIsMobile(window.innerWidth <= 768);
+      const newIsMobile = window.innerWidth <= 768;
+      setIsMobile(newIsMobile);
     };
 
     window.addEventListener('resize', handleResize);
@@ -248,18 +275,101 @@ const Editor: React.FC<EditorProps> = ({
   }, []);
 
   useEffect(() => {
-    if (editorRef.current && content !== editorRef.current.innerHTML) {
-      editorRef.current.innerHTML = content;
+    if (editorRef.current) {
+      editorRef.current.innerHTML = editorContent;
     }
-  }, [content]);
+  }, [editorContent]);
 
-  const handleInput = () => {
+  // 初始化移动端内容
+  useEffect(() => {
+    if (isMobile && content) {
+      setMobileContent(content);
+    }
+  }, [isMobile, content]);
+
+  useEffect(() => {
+    const handleKeyboardToggle = () => {
+      // 键盘切换事件处理
+    };
+
+    document.addEventListener('keyboard-toggle', handleKeyboardToggle);
+    return () => {
+      document.removeEventListener('keyboard-toggle', handleKeyboardToggle);
+    };
+  }, []);
+
+  const handleKeyPress = (char: string) => {
+    if (isMobile) {
+      // 移动端：使用函数式更新确保使用最新的状态
+      setMobileContent(prevContent => {
+        let newContent = prevContent;
+        
+        if (char === 'backspace') {
+          // 处理退格键
+          if (prevContent.length > 0) {
+            // 检查最后一个字符是否是空格
+            const lastChar = prevContent[prevContent.length - 1];
+            if (lastChar === ' ') {
+              // 如果是空格，只删除一个字符
+              newContent = prevContent.slice(0, -1);
+            } else {
+              // 如果是回鹘文字符，删除两个单位
+              newContent = prevContent.slice(0, -2);
+            }
+          }
+        } else {
+          // 处理普通字符
+          newContent = prevContent + char;
+        }
+        
+        onContentChange(newContent);
+        return newContent;
+      });
+    } else {
+      // 桌面端：使用selection API
+      if (editorRef.current) {
+        const selection = window.getSelection();
+        if (selection && selection.rangeCount > 0) {
+          const range = selection.getRangeAt(0);
+          if (char === 'backspace') {
+            if (range.startOffset > 0) {
+              // 检查要删除的字符是否是空格
+              const text = range.startContainer.textContent || '';
+              const charToDelete = text[range.startOffset - 1];
+              if (charToDelete === ' ') {
+                // 如果是空格，只删除一个字符
+                range.setStart(range.startContainer, range.startOffset - 1);
+              } else {
+                // 如果是回鹘文字符，删除两个单位
+                range.setStart(range.startContainer, range.startOffset - 2);
+              }
+              range.deleteContents();
+            }
+          } else {
+            const textNode = document.createTextNode(char);
+            range.deleteContents();
+            range.insertNode(textNode);
+            range.setStartAfter(textNode);
+            range.setEndAfter(textNode);
+          }
+          selection.removeAllRanges();
+          selection.addRange(range);
+          
+          // 触发输入事件以更新内容
+          const inputEvent = new Event('input', { bubbles: true });
+          editorRef.current.dispatchEvent(inputEvent);
+        }
+      }
+    }
+  };
+
+  const handleInput = (e: React.FormEvent<HTMLDivElement>) => {
     if (editorRef.current) {
       onContentChange(editorRef.current.innerHTML);
     }
   };
 
-  const handleFocus = () => {
+  const handleFocus = (e: React.FocusEvent<HTMLDivElement>) => {
     if (editorRef.current) {
       const selection = window.getSelection();
       if (selection) {
@@ -420,32 +530,47 @@ const Editor: React.FC<EditorProps> = ({
           </FontSizeButton>
         </FontSizeControl>
       </ControlsContainer>
-      <EditorArea
-        ref={editorRef}
-        contentEditable={true}
-        suppressContentEditableWarning
-        fontSize={fontSize}
-        onInput={handleInput}
-        onFocus={handleFocus}
-        onBlur={handleFocus}
-        onKeyDown={(e) => {
-          if (isMobile) {
-            e.preventDefault();
-          }
-        }}
-        onCompositionStart={(e) => {
-          if (isMobile) {
-            e.preventDefault();
-          }
-        }}
-      />
+      {isMobile ? (
+        <MobileDisplayArea
+          ref={editorRef}
+          fontSize={fontSize}
+          style={{ 
+            fontFamily: isFontLoaded ? 'NotoSerifOldUyghur, serif' : 'serif'
+          }}
+        >
+          {mobileContent}
+        </MobileDisplayArea>
+      ) : (
+        <EditorArea
+          ref={editorRef}
+          contentEditable={true}
+          suppressContentEditableWarning={true}
+          fontSize={fontSize}
+          onInput={handleInput}
+          onFocus={handleFocus}
+          onBlur={handleFocus}
+          style={{ 
+            fontFamily: isFontLoaded ? 'NotoSerifOldUyghur, serif' : 'serif',
+            fontSize: '20px',
+            lineHeight: '1.6',
+            padding: '20px'
+          }}
+        />
+      )}
       <Status>{status}</Status>
-      <MobileKeyboardButton onClick={() => {
-        const keyboardEvent = new Event('keyboard-toggle', { bubbles: true });
-        document.dispatchEvent(keyboardEvent);
-      }}>
-        显示软键盘
-      </MobileKeyboardButton>
+      {isMobile && (
+        <MobileKeyboardButton onClick={() => {
+          const event = new Event('keyboard-toggle', { bubbles: true });
+          document.dispatchEvent(event);
+        }}>
+          显示软键盘
+        </MobileKeyboardButton>
+      )}
+      {isMobile ? (
+        <MobileKeyboard onKeyPress={handleKeyPress} />
+      ) : (
+        <Keyboard onKeyPress={handleKeyPress} />
+      )}
     </EditorContainer>
   );
 };

@@ -235,7 +235,6 @@ function App() {
           <Disclaimer />
         )}
       </AppContainer>
-      <Keyboard onKeyPress={handleKeyPress} />
     </>
   );
 }
