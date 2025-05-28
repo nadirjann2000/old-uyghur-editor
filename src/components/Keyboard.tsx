@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import styled from 'styled-components';
 
 const KeyboardButton = styled.button`
@@ -25,9 +25,13 @@ const KeyboardButton = styled.button`
     transform: translateY(-2px);
     box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
   }
+
+  @media (max-width: 768px) {
+    display: none;
+  }
 `;
 
-const KeyboardContainer = styled.div<{ isOpen: boolean }>`
+const KeyboardContainer = styled.div<{ $isOpen: boolean; $isMobile: boolean }>`
   position: fixed;
   bottom: 100px;
   right: 30px;
@@ -35,11 +39,25 @@ const KeyboardContainer = styled.div<{ isOpen: boolean }>`
   border-radius: 12px;
   padding: 20px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-  display: ${props => props.isOpen ? 'block' : 'none'};
+  display: ${props => props.$isOpen ? 'block' : 'none'};
   z-index: 999;
   transition: all 0.3s ease;
   max-width: 400px;
   width: 90vw;
+
+  @media (max-width: 768px) {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    max-width: none;
+    border-radius: 12px 12px 0 0;
+    padding: 10px;
+    display: ${props => props.$isMobile && props.$isOpen ? 'block' : 'none'};
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+    box-sizing: border-box;
+  }
 `;
 
 const KeyboardGrid = styled.div`
@@ -47,6 +65,13 @@ const KeyboardGrid = styled.div`
   grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
   gap: 10px;
   margin-top: 15px;
+
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(8, 1fr);
+    gap: 5px;
+    margin-top: 10px;
+    padding: 0 5px;
+  }
 `;
 
 const KeyButton = styled.button`
@@ -72,6 +97,13 @@ const KeyButton = styled.button`
     background-color: #e3f2fd;
     transform: scale(0.95);
   }
+
+  @media (max-width: 768px) {
+    width: 100%;
+    height: 35px;
+    font-size: 18px;
+    padding: 0;
+  }
 `;
 
 const KeyboardTitle = styled.h3`
@@ -79,6 +111,46 @@ const KeyboardTitle = styled.h3`
   color: #2c3e50;
   font-size: 1.2rem;
   text-align: center;
+
+  @media (max-width: 768px) {
+    display: none;
+  }
+`;
+
+const CollapseButton = styled.button`
+  display: none;
+  position: absolute;
+  bottom: 8px;
+  right: 20px;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background-color: #2c3e50;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  align-items: center;
+  justify-content: center;
+
+  &:hover {
+    background-color: #1a252f;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+  }
+
+  &:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  }
+
+  @media (max-width: 768px) {
+    display: flex;
+  }
 `;
 
 interface KeyboardProps {
@@ -87,10 +159,48 @@ interface KeyboardProps {
 
 const Keyboard: React.FC<KeyboardProps> = ({ onKeyPress }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+
+    const handleKeyboardToggle = () => {
+      setIsOpen(true);
+    };
+
+    // 阻止系统键盘弹出
+    const preventSystemKeyboard = (e: Event) => {
+      if (isMobile) {
+        e.preventDefault();
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    document.addEventListener('keyboard-toggle', handleKeyboardToggle);
+    document.addEventListener('focusin', preventSystemKeyboard, true);
+    
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      document.removeEventListener('keyboard-toggle', handleKeyboardToggle);
+      document.removeEventListener('focusin', preventSystemKeyboard, true);
+    };
+  }, [isMobile]);
 
   const handleKeyClick = (char: string, e: React.MouseEvent) => {
     e.preventDefault();
     onKeyPress(char);
+  };
+
+  const handleBackspace = (e: React.MouseEvent) => {
+    e.preventDefault();
+    onKeyPress('backspace');
+  };
+
+  const handleSpace = (e: React.MouseEvent) => {
+    e.preventDefault();
+    onKeyPress(' ');
   };
 
   return (
@@ -101,8 +211,14 @@ const Keyboard: React.FC<KeyboardProps> = ({ onKeyPress }) => {
       }}>
         ⌨️
       </KeyboardButton>
-      <KeyboardContainer isOpen={isOpen}>
+      <KeyboardContainer $isOpen={isOpen} $isMobile={isMobile}>
         <KeyboardTitle>回鹘文软键盘</KeyboardTitle>
+        <CollapseButton onClick={(e) => {
+          e.preventDefault();
+          setIsOpen(false);
+        }}>
+          ↓
+        </CollapseButton>
         <KeyboardGrid>
           {Array.from({ length: 26 }, (_, i) => 
             String.fromCodePoint(0x10F70 + i)
@@ -114,6 +230,26 @@ const Keyboard: React.FC<KeyboardProps> = ({ onKeyPress }) => {
               {char}
             </KeyButton>
           ))}
+          <KeyButton
+            onClick={handleSpace}
+            style={{
+              backgroundColor: '#95a5a6',
+              color: 'white',
+              gridColumn: 'span 2'
+            }}
+          >
+            ␣
+          </KeyButton>
+          <KeyButton
+            onClick={handleBackspace}
+            style={{
+              backgroundColor: '#e74c3c',
+              color: 'white',
+              gridColumn: 'span 2'
+            }}
+          >
+            ←
+          </KeyButton>
         </KeyboardGrid>
       </KeyboardContainer>
     </>

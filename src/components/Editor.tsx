@@ -9,6 +9,13 @@ const EditorContainer = styled.div`
   max-width: 1200px;
   margin: 0 auto;
   box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 10px;
+    margin: 5px;
+    width: 100%;
+    max-width: none;
+  }
 `;
 
 const Title = styled.h1`
@@ -17,6 +24,11 @@ const Title = styled.h1`
   color: #2c3e50;
   font-size: 2.5rem;
   text-align: center;
+
+  @media (max-width: 768px) {
+    font-size: 1.8rem;
+    margin-bottom: 16px;
+  }
 `;
 
 const EditorArea = styled.div<{ fontSize: number }>`
@@ -40,6 +52,11 @@ const EditorArea = styled.div<{ fontSize: number }>`
   -webkit-user-select: text;
   -moz-user-select: text;
   -ms-user-select: text;
+
+  @media (max-width: 768px) {
+    min-height: 300px;
+    padding: 15px;
+  }
 `;
 
 const ControlsContainer = styled.div`
@@ -50,6 +67,12 @@ const ControlsContainer = styled.div`
   padding: 16px;
   background-color: #f8f9fa;
   border-radius: 8px;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 12px;
+    padding: 12px;
+  }
 `;
 
 const ToggleButton = styled.button`
@@ -67,12 +90,21 @@ const ToggleButton = styled.button`
     background-color: #27ae60;
     transform: translateY(-1px);
   }
+
+  @media (max-width: 768px) {
+    display: none;
+  }
 `;
 
 const ButtonContainer = styled.div`
   display: flex;
   gap: 12px;
   flex: 1;
+
+  @media (max-width: 768px) {
+    width: 100%;
+    justify-content: space-between;
+  }
 `;
 
 const Button = styled.button`
@@ -106,6 +138,14 @@ const FontSizeControl = styled.div`
   gap: 12px;
   padding: 0 16px;
   border-left: 2px solid #e0e0e0;
+
+  @media (max-width: 768px) {
+    width: 100%;
+    justify-content: center;
+    border-left: none;
+    border-top: 2px solid #e0e0e0;
+    padding-top: 12px;
+  }
 `;
 
 const FontSizeButton = styled.button`
@@ -143,6 +183,32 @@ const Status = styled.div`
   border-radius: 6px;
   text-align: center;
   font-size: 14px;
+
+  @media (max-width: 768px) {
+    display: none;
+  }
+`;
+
+const MobileKeyboardButton = styled.button`
+  display: none;
+  margin-top: 16px;
+  padding: 12px;
+  width: 100%;
+  background-color: #3498db;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background-color: #2980b9;
+  }
+
+  @media (max-width: 768px) {
+    display: block;
+  }
 `;
 
 interface EditorProps {
@@ -163,6 +229,16 @@ const Editor: React.FC<EditorProps> = ({
   const editorRef = useRef<HTMLDivElement>(null);
   const [status, setStatus] = useState<string>('正在加载字体...');
   const [isFontLoaded, setIsFontLoaded] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     document.fonts.ready.then(() => {
@@ -346,14 +422,30 @@ const Editor: React.FC<EditorProps> = ({
       </ControlsContainer>
       <EditorArea
         ref={editorRef}
-        contentEditable
+        contentEditable={true}
         suppressContentEditableWarning
         fontSize={fontSize}
         onInput={handleInput}
         onFocus={handleFocus}
         onBlur={handleFocus}
+        onKeyDown={(e) => {
+          if (isMobile) {
+            e.preventDefault();
+          }
+        }}
+        onCompositionStart={(e) => {
+          if (isMobile) {
+            e.preventDefault();
+          }
+        }}
       />
       <Status>{status}</Status>
+      <MobileKeyboardButton onClick={() => {
+        const keyboardEvent = new Event('keyboard-toggle', { bubbles: true });
+        document.dispatchEvent(keyboardEvent);
+      }}>
+        显示软键盘
+      </MobileKeyboardButton>
     </EditorContainer>
   );
 };

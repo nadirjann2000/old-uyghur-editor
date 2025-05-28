@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import Editor from './components/Editor';
 import VerticalEditor from './components/VerticalEditor';
@@ -48,17 +48,33 @@ const NavContainer = styled.div`
   justify-content: space-between;
   align-items: center;
   padding: 0 20px;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 15px;
+    padding: 10px;
+  }
 `;
 
 const Logo = styled.div`
   font-size: 1.5rem;
   font-weight: bold;
   color: #2c3e50;
+
+  @media (max-width: 768px) {
+    font-size: 1.2rem;
+  }
 `;
 
 const NavLinks = styled.div`
   display: flex;
   gap: 20px;
+
+  @media (max-width: 768px) {
+    width: 100%;
+    justify-content: space-around;
+    gap: 10px;
+  }
 `;
 
 const NavLink = styled.a<{ active?: boolean }>`
@@ -73,6 +89,12 @@ const NavLink = styled.a<{ active?: boolean }>`
     background-color: #f8f9fa;
     color: #3498db;
   }
+
+  @media (max-width: 768px) {
+    font-size: 1rem;
+    padding: 5px;
+    text-align: center;
+  }
 `;
 
 function App() {
@@ -80,6 +102,19 @@ function App() {
   const [sharedContent, setSharedContent] = useState('');
   const [sharedFontSize, setSharedFontSize] = useState(24);
   const [currentPage, setCurrentPage] = useState<'editor' | 'about' | 'disclaimer'>('editor');
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+      if (window.innerWidth <= 768) {
+        setIsVertical(false);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const handleContentChange = (content: string) => {
     setSharedContent(content);
@@ -90,10 +125,8 @@ function App() {
   };
 
   const handleKeyPress = (char: string) => {
-    console.log('handleKeyPress called with char:', char);
     if (currentPage === 'editor') {
       const selection = window.getSelection();
-      console.log('Selection:', selection);
       if (selection && selection.rangeCount > 0) {
         const range = selection.getRangeAt(0);
         // 获取实际的编辑器元素，考虑 Shadow DOM
@@ -101,37 +134,39 @@ function App() {
           ? range.commonAncestorContainer.parentElement
           : range.commonAncestorContainer;
         
-        console.log('Editor element:', editorElement);
-        
         if (editorElement instanceof HTMLElement && editorElement.getAttribute('contenteditable') === 'true') {
-          console.log('Attempting to insert text:', char);
           try {
-            // 使用 insertText 方法插入文本
-            const textNode = document.createTextNode(char);
-            range.deleteContents();
-            range.insertNode(textNode);
+            if (char === 'backspace') {
+              // 处理退格键
+              if (range.startOffset > 0) {
+                range.setStart(range.startContainer, range.startOffset - 1);
+                range.deleteContents();
+              } else if (range.startContainer.previousSibling) {
+                range.selectNodeContents(range.startContainer.previousSibling);
+                range.deleteContents();
+              }
+            } else {
+              // 使用 insertText 方法插入文本
+              const textNode = document.createTextNode(char);
+              range.deleteContents();
+              range.insertNode(textNode);
+              
+              // 移动光标到插入的文本后面
+              range.setStartAfter(textNode);
+              range.setEndAfter(textNode);
+            }
             
-            // 移动光标到插入的文本后面
-            range.setStartAfter(textNode);
-            range.setEndAfter(textNode);
             selection.removeAllRanges();
             selection.addRange(range);
             
             // 触发输入事件以更新内容
             const inputEvent = new Event('input', { bubbles: true });
             editorElement.dispatchEvent(inputEvent);
-            console.log('Text insertion completed');
           } catch (error) {
             console.error('Error inserting text:', error);
           }
-        } else {
-          console.log('Editor element not found or not contenteditable');
         }
-      } else {
-        console.log('No valid selection found');
       }
-    } else {
-      console.log('Not in editor page');
     }
   };
 
@@ -177,7 +212,7 @@ function App() {
       </Nav>
       <AppContainer>
         {currentPage === 'editor' ? (
-          isVertical ? (
+          !isMobile && isVertical ? (
             <VerticalEditor
               onModeChange={setIsVertical}
               content={sharedContent}
