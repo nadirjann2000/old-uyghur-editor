@@ -1,5 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import styled from 'styled-components';
+import Keyboard from './Keyboard';
 
 const EditorContainer = styled.div`
   background-color: #ffffff;
@@ -347,6 +348,34 @@ const VerticalEditor: React.FC<VerticalEditorProps> = ({
     }
   };
 
+  const handleKeyPress = (char: string) => {
+    if (editorRef.current) {
+      const selection = window.getSelection();
+      if (selection && selection.rangeCount > 0) {
+        const range = selection.getRangeAt(0);
+        if (char === 'backspace') {
+          if (range.startOffset > 0) {
+            // 在竖排模式下，直接删除一个字符
+            range.setStart(range.startContainer, range.startOffset - 1);
+            range.deleteContents();
+          }
+        } else {
+          const textNode = document.createTextNode(char);
+          range.deleteContents();
+          range.insertNode(textNode);
+          range.setStartAfter(textNode);
+          range.setEndAfter(textNode);
+        }
+        selection.removeAllRanges();
+        selection.addRange(range);
+        
+        // 触发输入事件以更新内容
+        const inputEvent = new Event('input', { bubbles: true });
+        editorRef.current.dispatchEvent(inputEvent);
+      }
+    }
+  };
+
   return (
     <EditorContainer>
       <Title>回鹘文编辑工具 - 竖排模式</Title>
@@ -400,6 +429,7 @@ const VerticalEditor: React.FC<VerticalEditorProps> = ({
         </EditorContentWrapper>
       </EditorWrapper>
       <Status>{status}</Status>
+      <Keyboard onKeyPress={handleKeyPress} />
     </EditorContainer>
   );
 };

@@ -333,16 +333,8 @@ const Editor: React.FC<EditorProps> = ({
           const range = selection.getRangeAt(0);
           if (char === 'backspace') {
             if (range.startOffset > 0) {
-              // 检查要删除的字符是否是空格
-              const text = range.startContainer.textContent || '';
-              const charToDelete = text[range.startOffset - 1];
-              if (charToDelete === ' ') {
-                // 如果是空格，只删除一个字符
-                range.setStart(range.startContainer, range.startOffset - 1);
-              } else {
-                // 如果是回鹘文字符，删除两个单位
-                range.setStart(range.startContainer, range.startOffset - 2);
-              }
+              // 在横排模式下，直接删除一个字符
+              range.setStart(range.startContainer, range.startOffset - 1);
               range.deleteContents();
             }
           } else {
